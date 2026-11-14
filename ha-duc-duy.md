@@ -11,10 +11,11 @@
 1. **Tìm hoặc clone repo:** Kiểm tra trên máy Mac xem đã có repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) chưa. Nếu chưa có, tự `git clone`:
    - Nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
    - Đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
-2. **Kiểm tra Git identity:** `GIT_EMAIL` bên dưới đang là mẫu (`@example.com`). **Bắt buộc** hỏi người dùng (Hà Đức Duy) tên & email GitHub thật trước khi chạy commit.
+2. **Kiểm tra Git identity:** `GIT_NAME` là `Ha Duc Duy` và `GIT_EMAIL` đã được đặt là `duy.hd2416182@sis.hust.edu.vn`. Xác nhận lại với người dùng nếu cần dùng email GitHub khác.
 3. **Kiểm tra điều kiện tiên quyết từng task:** Kiểm tra nhánh của thành viên trước đã được merge vào `origin/main` chưa trước khi `git pull origin main` và tạo nhánh mới. Nếu chưa merge, dừng lại và báo người dùng.
-4. **Cơ chế icon tăng dần (`sync_icons_index`):** Mỗi feature chỉ copy đúng các file icon dùng cho tính năng đó, sau đó gọi `sync_icons_index` để file `src/components/icons/index.ts` chỉ export những icon đang có, đảm bảo không lỗi `Module not found`.
-5. **Quy tắc an toàn:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Dùng `fake_commit` để giữ nguyên timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
+4. **Chạy gộp Bước 0 + Task trong cùng 1 phiên shell:** Đa số AI agent chạy mỗi lệnh trong một phiên shell mới; **bắt buộc** gộp phần khai báo ở Bước 0 cùng với lệnh của Task vào chung 1 lần thực thi để không mất biến `$SRC_*`, `$DST_*` và hàm `copy_rel`, `sync_icons_index`, `fake_commit`.
+5. **Cơ chế icon tăng dần (`sync_icons_index`):** Mỗi feature chỉ copy đúng các file icon dùng cho tính năng đó, sau đó gọi `sync_icons_index` để file `src/components/icons/index.ts` chỉ export những icon đang có, đảm bảo không lỗi `Module not found`.
+6. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `copy_rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
 
 ---
 
@@ -33,9 +34,9 @@ DST_USER="$HOME/Documents/CNPM/ViVuViet-frontend-user"
 DST_ADMIN="$HOME/Documents/CNPM/ViVuViet-frontend-admin"
 DST_DRIVER="$HOME/Documents/CNPM/ViVuViet-frontend-driver"
 
-# 3. Cấu hình Git tác giả (THAY BẰNG TÊN VÀ EMAIL GITHUB CỦA BẠN)
+# 3. Cấu hình Git tác giả
 GIT_NAME="Ha Duc Duy"
-GIT_EMAIL="haducduy@example.com"
+GIT_EMAIL="duy.hd2416182@sis.hust.edu.vn"
 
 for repo in "$DST_USER" "$DST_ADMIN" "$DST_DRIVER"; do
   git -C "$repo" config user.name "$GIT_NAME"
@@ -52,7 +53,7 @@ copy_rel() {
     local dst="$dst_root/$p"
     if [ ! -e "$src" ]; then
       echo "Khong tim thay: $src" >&2
-      continue
+      return 1
     fi
     if [ -d "$src" ]; then
       mkdir -p "$dst"
@@ -71,10 +72,14 @@ sync_icons_index() {
   local src_index="$src_root/src/components/icons/index.ts"
   local dst_dir="$dst_root/src/components/icons"
   local dst_index="$dst_dir/index.ts"
+  if [ ! -f "$src_index" ]; then
+    echo "Khong tim thay: $src_index" >&2
+    return 1
+  fi
   mkdir -p "$dst_dir"
   : > "$dst_index"
   while IFS= read -r line; do
-    if [[ "$line" =~ \./([a-z0-9-]+) ]]; then
+    if [[ "$line" =~ \./([A-Za-z0-9_-]+) ]]; then
       local mod="${BASH_REMATCH[1]}"
       if [ -f "$dst_dir/$mod.tsx" ] || [ -f "$dst_dir/$mod.ts" ]; then
         echo "$line" >> "$dst_index"
@@ -89,6 +94,7 @@ fake_commit() {
   local iso_date="$2"
   local message="$3"
   git -C "$repo_path" add -A
+  git -C "$repo_path" reset -q HEAD -- AGENTS.md opencode.json 2>/dev/null || true
   if [ -z "$(git -C "$repo_path" status --porcelain)" ]; then
     echo "Bo qua (khong co thay doi): $message"
     return 0

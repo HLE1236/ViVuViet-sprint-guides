@@ -10,9 +10,10 @@
 1. **Tìm hoặc clone repo:** Kiểm tra trên máy xem đã có các repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) chưa. Nếu chưa có, tự `git clone`:
    - Nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
    - Đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
-2. **Kiểm tra Git identity:** Kiểm tra `GIT_NAME` và `GIT_EMAIL` ở Bước 0. Nếu chưa chắc đúng tài khoản GitHub của Đỗ Lê Hoàng thì hỏi người dùng trước khi commit.
+2. **Kiểm tra Git identity:** `GIT_NAME` là `Do Le Hoang` và `GIT_EMAIL` là `200968025+HLE1236@users.noreply.github.com`. Kiểm tra lại với người dùng nếu muốn đổi sang email khác.
 3. **Kiểm tra điều kiện tiên quyết từng task:** Với task 1.11, 2.10, 2.11, kiểm tra xem nhánh của thành viên trước đã được merge vào `origin/main` chưa trước khi chạy `git pull origin main` và tạo nhánh mới. Nếu chưa merge, dừng lại và báo người dùng.
-4. **Quy tắc an toàn:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Dùng `Fake-Commit` để giữ nguyên timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub (hoặc chạy `gh pr create` nếu `gh` đã đăng nhập).
+4. **Chạy gộp Bước 0 + Task trong cùng 1 phiên shell:** Đa số AI agent chạy mỗi lệnh trong một phiên shell mới; **bắt buộc** gộp phần khai báo ở Bước 0 cùng với lệnh của Task vào chung 1 lần thực thi để không mất biến `$SRC_*`, `$DST_*` và hàm `Copy-Rel`, `Fake-Commit`.
+5. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `Copy-Rel` báo thiếu file -> dừng ngay trước khi push. Ở Task 1.2, kiểm tra `git diff` của `package.json`, `next.config.ts`, `.gitignore` để không vô tình làm mất cấu hình Next.js 16.4.5 hoặc `AGENTS.md` / `opencode.json` có sẵn ở repo đích. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub (hoặc chạy `gh pr create` nếu `gh` đã đăng nhập).
 
 ---
 
@@ -51,8 +52,7 @@ function Copy-Rel {
         $src = Join-Path $SrcRoot ($p -replace '/', '\')
         $dst = Join-Path $DstRoot ($p -replace '/', '\')
         if (-not (Test-Path $src)) {
-            Write-Warning "Khong tim thay: $src"
-            continue
+            throw "Khong tim thay: $src"
         }
         if (Test-Path $src -PathType Container) {
             New-Item -ItemType Directory -Path $dst -Force | Out-Null
@@ -73,6 +73,7 @@ function Fake-Commit {
         [string]$Message
     )
     git -C $RepoPath add -A
+    git -C $RepoPath reset -q HEAD -- AGENTS.md opencode.json 2>$null
     $changes = git -C $RepoPath status --porcelain
     if (-not $changes) {
         Write-Host "Bo qua (khong co thay doi): $Message"
@@ -105,6 +106,10 @@ Copy-Rel $SRC_USER $DST_USER @(
     ".gitignore", "README.md", "eslint.config.mjs",
     "next.config.ts", "tsconfig.json", "package.json", "package-lock.json"
 )
+# Giu lai dong 1stplan.md trong .gitignore neu repo dich da co quy uoc nay
+if ((Test-Path (Join-Path $DST_USER ".gitignore")) -and -not (Select-String -Path (Join-Path $DST_USER ".gitignore") -Pattern "^1stplan\.md$" -Quiet)) {
+    Add-Content -Path (Join-Path $DST_USER ".gitignore") -Value "`n1stplan.md"
+}
 Fake-Commit $DST_USER "2026-10-27T09:42:18+07:00" "chore: cap nhat cau hinh nextjs va dependencies cho user"
 
 # Commit 2: Tai nguyen public va favicon
@@ -129,10 +134,18 @@ Copy-Rel $SRC_ADMIN $DST_ADMIN @(
     ".gitignore", "README.md", "eslint.config.mjs",
     "next.config.ts", "tsconfig.json", "package.json", "package-lock.json"
 )
+if ((Test-Path (Join-Path $DST_ADMIN ".gitignore")) -and -not (Select-String -Path (Join-Path $DST_ADMIN ".gitignore") -Pattern "^1stplan\.md$" -Quiet)) {
+    Add-Content -Path (Join-Path $DST_ADMIN ".gitignore") -Value "`n1stplan.md"
+}
 Fake-Commit $DST_ADMIN "2026-10-27T16:12:31+07:00" "chore: cap nhat cau hinh nextjs va dependencies cho admin"
 
 # Commit 2: Public assets, globals.css, config va utils dung chung
 Copy-Rel $SRC_ADMIN $DST_ADMIN @("public", "src/app/globals.css", "src/config", "src/utils")
+foreach ($icon in @("src/app/favicon.ico", "src/app/icon.svg")) {
+    if (Test-Path (Join-Path $SRC_ADMIN ($icon -replace '/', '\'))) {
+        Copy-Rel $SRC_ADMIN $DST_ADMIN @($icon)
+    }
+}
 Fake-Commit $DST_ADMIN "2026-10-27T20:34:16+07:00" "chore: them assets, config va ham tien ich cho admin"
 
 git -C $DST_ADMIN push -u origin chore/setup-base
@@ -217,11 +230,12 @@ Copy-Rel $SRC_DRIVER $DST_DRIVER @(
 )
 Fake-Commit $DST_DRIVER "2026-11-18T14:22:17+07:00" "feat: bo sung bang dieu hanh va modal xac nhan cap nhat trang thai"
 
-# Commit 2: Panel hanh khach khi van hanh chuyen
+# Commit 2: Panel hanh khach va trang dieu hanh chinh
 Copy-Rel $SRC_DRIVER $DST_DRIVER @(
-    "src/app/(driver)/dieu-hanh/_components/passengers-panel.tsx"
+    "src/app/(driver)/dieu-hanh/_components/passengers-panel.tsx",
+    "src/app/(driver)/dieu-hanh/page.tsx"
 )
-Fake-Commit $DST_DRIVER "2026-11-18T20:11:45+07:00" "feat: hoan thien panel hanh khach va trang thai don tra"
+Fake-Commit $DST_DRIVER "2026-11-18T20:11:45+07:00" "feat: hoan thien trang dieu hanh, panel hanh khach va trang thai don tra"
 
 git -C $DST_DRIVER push -u origin feat/driver-status-updates
 ```

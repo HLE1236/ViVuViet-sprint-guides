@@ -9,9 +9,10 @@
 1. **Tìm hoặc clone repo:** Kiểm tra trên máy xem đã có repo nguồn (`nmcnpm-admin`, `locdz`) và repo đích (`ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) chưa. Nếu chưa có, tự `git clone`:
    - Nguồn: `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
    - Đích: `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
-2. **Kiểm tra Git identity:** `GIT_EMAIL` bên dưới đang là mẫu (`@example.com`). **Bắt buộc** hỏi người dùng (Lại Quốc Minh) tên & email GitHub thật trước khi chạy commit.
+2. **Kiểm tra Git identity:** `GIT_NAME` là `Lai Quoc Minh` và `GIT_EMAIL` đã được đặt là `laiminh942@gmail.com`. Xác nhận lại với người dùng nếu cần dùng email GitHub khác.
 3. **Kiểm tra điều kiện tiên quyết từng task:** Kiểm tra nhánh của thành viên trước đã được merge vào `origin/main` chưa trước khi `git pull origin main` và tạo nhánh mới. Nếu chưa merge, dừng lại và báo người dùng.
-4. **Quy tắc an toàn:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Dùng `Fake-Commit` để giữ nguyên timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
+4. **Chạy gộp Bước 0 + Task trong cùng 1 phiên shell:** Đa số AI agent chạy mỗi lệnh trong một phiên shell mới; **bắt buộc** gộp phần khai báo ở Bước 0 cùng với lệnh của Task vào chung 1 lần thực thi để không mất biến `$SRC_*`, `$DST_*` và hàm `Copy-Rel`, `Fake-Commit`.
+5. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `Copy-Rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
 
 ---
 
@@ -28,9 +29,9 @@ $SRC_DRIVER = "D:\2026.1\CNPM\sources\locdz"
 $DST_ADMIN  = "D:\2026.1\CNPM\ViVuViet-frontend-admin"
 $DST_DRIVER = "D:\2026.1\CNPM\ViVuViet-frontend-driver"
 
-# 3. Cấu hình Git tác giả (THAY BẰNG TÊN VÀ EMAIL GITHUB CỦA BẠN)
+# 3. Cấu hình Git tác giả
 $GIT_NAME  = "Lai Quoc Minh"
-$GIT_EMAIL = "laiquocminh@example.com"
+$GIT_EMAIL = "laiminh942@gmail.com"
 
 foreach ($repo in @($DST_ADMIN, $DST_DRIVER)) {
     git -C $repo config user.name $GIT_NAME
@@ -48,8 +49,7 @@ function Copy-Rel {
         $src = Join-Path $SrcRoot ($p -replace '/', '\')
         $dst = Join-Path $DstRoot ($p -replace '/', '\')
         if (-not (Test-Path $src)) {
-            Write-Warning "Khong tim thay: $src"
-            continue
+            throw "Khong tim thay: $src"
         }
         if (Test-Path $src -PathType Container) {
             New-Item -ItemType Directory -Path $dst -Force | Out-Null
@@ -70,6 +70,7 @@ function Fake-Commit {
         [string]$Message
     )
     git -C $RepoPath add -A
+    git -C $RepoPath reset -q HEAD -- AGENTS.md opencode.json 2>$null
     $changes = git -C $RepoPath status --porcelain
     if (-not $changes) {
         Write-Host "Bo qua (khong co thay doi): $Message"
@@ -135,12 +136,11 @@ git -C $DST_DRIVER checkout main
 git -C $DST_DRIVER pull origin main
 git -C $DST_DRIVER checkout -b feat/driver-operations
 
-# Commit 1: Du lieu mock dieu hanh va trang dieu hanh chinh
+# Commit 1: Du lieu mock dieu hanh
 Copy-Rel $SRC_DRIVER $DST_DRIVER @(
-    "src/lib/mock/operate.ts",
-    "src/app/(driver)/dieu-hanh/page.tsx"
+    "src/lib/mock/operate.ts"
 )
-Fake-Commit $DST_DRIVER "2026-11-17T10:33:25+07:00" "feat: khoi tao trang dieu hanh va du lieu trang thai chuyen"
+Fake-Commit $DST_DRIVER "2026-11-17T10:33:25+07:00" "feat: khoi tao du lieu mock trang thai dieu hanh chuyen"
 
 # Commit 2: Sidebar chon chuyen va panel lo trinh
 Copy-Rel $SRC_DRIVER $DST_DRIVER @(

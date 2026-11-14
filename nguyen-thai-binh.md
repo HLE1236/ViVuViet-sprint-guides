@@ -11,10 +11,11 @@
 1. **Tìm hoặc clone repo:** Kiểm tra trên máy xem đã có repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) chưa. Nếu chưa có, tự `git clone`:
    - Nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
    - Đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
-2. **Kiểm tra Git identity:** `GIT_EMAIL` bên dưới đang là mẫu (`@example.com`). **Bắt buộc** hỏi người dùng (Nguyễn Thái Bình) tên & email GitHub thật trước khi chạy commit.
+2. **Kiểm tra Git identity:** `GIT_NAME` là `Nguyen Thai Binh` và `GIT_EMAIL` đã được đặt là `nguyenthaibinh.tink32chl@gmail.com`. Xác nhận lại với người dùng nếu cần dùng email GitHub khác.
 3. **Kiểm tra điều kiện tiên quyết từng task:** Kiểm tra nhánh của thành viên trước đã được merge vào `origin/main` chưa trước khi `git pull origin main` và tạo nhánh mới. Nếu chưa merge, dừng lại và báo người dùng.
-4. **Cơ chế icon tăng dần (`Sync-IconsIndex`):** Mỗi feature chỉ copy đúng các file icon dùng cho tính năng đó, sau đó gọi `Sync-IconsIndex` để `src/components/icons/index.ts` chỉ export những icon đang có, đảm bảo không lỗi `Module not found`.
-5. **Quy tắc an toàn:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Dùng `Fake-Commit` để giữ nguyên timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
+4. **Chạy gộp Bước 0 + Task trong cùng 1 phiên shell:** Đa số AI agent chạy mỗi lệnh trong một phiên shell mới; **bắt buộc** gộp phần khai báo ở Bước 0 cùng với lệnh của Task vào chung 1 lần thực thi để không mất biến `$SRC_*`, `$DST_*` và hàm `Copy-Rel`, `Sync-IconsIndex`, `Fake-Commit`.
+5. **Cơ chế icon tăng dần (`Sync-IconsIndex`):** Mỗi feature chỉ copy đúng các file icon dùng cho tính năng đó, sau đó gọi `Sync-IconsIndex` để `src/components/icons/index.ts` chỉ export những icon đang có, đảm bảo không lỗi `Module not found`.
+6. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `Copy-Rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
 
 ---
 
@@ -33,9 +34,9 @@ $DST_USER   = "D:\2026.1\CNPM\ViVuViet-frontend-user"
 $DST_ADMIN  = "D:\2026.1\CNPM\ViVuViet-frontend-admin"
 $DST_DRIVER = "D:\2026.1\CNPM\ViVuViet-frontend-driver"
 
-# 3. Cấu hình Git tác giả (THAY BẰNG TÊN VÀ EMAIL GITHUB CỦA BẠN)
+# 3. Cấu hình Git tác giả
 $GIT_NAME  = "Nguyen Thai Binh"
-$GIT_EMAIL = "nguyenthaibinh@example.com"
+$GIT_EMAIL = "nguyenthaibinh.tink32chl@gmail.com"
 
 foreach ($repo in @($DST_USER, $DST_ADMIN, $DST_DRIVER)) {
     git -C $repo config user.name $GIT_NAME
@@ -53,8 +54,7 @@ function Copy-Rel {
         $src = Join-Path $SrcRoot ($p -replace '/', '\')
         $dst = Join-Path $DstRoot ($p -replace '/', '\')
         if (-not (Test-Path $src)) {
-            Write-Warning "Khong tim thay: $src"
-            continue
+            throw "Khong tim thay: $src"
         }
         if (Test-Path $src -PathType Container) {
             New-Item -ItemType Directory -Path $dst -Force | Out-Null
@@ -76,10 +76,13 @@ function Sync-IconsIndex {
     $srcIndex = Join-Path $SrcRoot "src\components\icons\index.ts"
     $dstDir   = Join-Path $DstRoot "src\components\icons"
     $dstIndex = Join-Path $dstDir "index.ts"
+    if (-not (Test-Path $srcIndex)) {
+        throw "Khong tim thay: $srcIndex"
+    }
     New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
     $kept = @()
     foreach ($line in Get-Content $srcIndex) {
-        if ($line -match '\./([a-z0-9-]+)') {
+        if ($line -match '\./([A-Za-z0-9_-]+)') {
             $mod = $Matches[1]
             if ((Test-Path (Join-Path $dstDir "$mod.tsx")) -or (Test-Path (Join-Path $dstDir "$mod.ts"))) {
                 $kept += $line
@@ -97,6 +100,7 @@ function Fake-Commit {
         [string]$Message
     )
     git -C $RepoPath add -A
+    git -C $RepoPath reset -q HEAD -- AGENTS.md opencode.json 2>$null
     $changes = git -C $RepoPath status --porcelain
     if (-not $changes) {
         Write-Host "Bo qua (khong co thay doi): $Message"
