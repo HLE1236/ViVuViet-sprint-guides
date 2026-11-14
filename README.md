@@ -10,6 +10,10 @@ Thư mục này chứa hướng dẫn chi tiết từng câu lệnh cho **4 thà
 - **Hà Đức Duy** (macOS / zsh-bash): [ha-duc-duy.md](./ha-duc-duy.md)
 - **Nguyễn Thái Bình** (Windows / PowerShell): [nguyen-thai-binh.md](./nguyen-thai-binh.md)
 
+## Script dùng chung (`scripts/`)
+- **Windows (PowerShell):** [scripts/sprint-helpers.ps1](./scripts/sprint-helpers.ps1) (`. .\scripts\sprint-helpers.ps1`)
+- **macOS / Linux (bash & zsh):** [scripts/sprint-helpers.sh](./scripts/sprint-helpers.sh) (`source ./scripts/sprint-helpers.sh`)
+
 ## Danh sách Repository (Nguồn & Đích)
 - **Repo nguồn (chỉ để copy code sang, không push ngược lại):**
   - `nmcnpm`: `https://github.com/helloworld-cmyk/nmcnpm.git` -> đẩy sang `ViVuViet-frontend-user`

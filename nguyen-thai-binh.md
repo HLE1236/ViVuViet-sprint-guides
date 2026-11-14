@@ -8,113 +8,38 @@
 - **Sprint 2 — Task 2.9 (13/11/2026):** Xây dựng giao diện thông tin xe & lịch sử chuyến của xe cho `ViVuViet-frontend-driver`.
 
 ## Hướng dẫn dành cho AI Agent (đọc kỹ trước khi chạy)
-1. **Tìm hoặc clone repo:** Kiểm tra trên máy xem đã có repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) chưa. Nếu chưa có, tự `git clone`:
-   - Nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
-   - Đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
-2. **Kiểm tra Git identity:** `GIT_NAME` là `Nguyen Thai Binh` và `GIT_EMAIL` đã được đặt là `nguyenthaibinh.tink32chl@gmail.com`. Xác nhận lại với người dùng nếu cần dùng email GitHub khác.
+1. **Hỏi vị trí lưu repo trước khi chạy:** Trước khi thực thi Bước 0, hãy **hỏi người dùng** (qua form/câu hỏi tương tác) xem trên máy đang lưu 3 repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và 3 repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) ở thư mục nào (hoặc muốn clone vào đâu nếu chưa có). Không tự ý clone vào đường dẫn mặc định nếu chưa hỏi.
+   - URL nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
+   - URL đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
+2. **Kiểm tra Git email:** Chỉ cần đảm bảo `user.email` là `nguyenthaibinh.tink32chl@gmail.com` (để GitHub gắn đúng commit vào tài khoản). Không cần ghi đè `user.name` nếu máy đã cấu hình sẵn.
 3. **Kiểm tra điều kiện tiên quyết từng task:** Kiểm tra nhánh của thành viên trước đã được merge vào `origin/main` chưa trước khi `git pull origin main` và tạo nhánh mới. Nếu chưa merge, dừng lại và báo người dùng.
-4. **Chạy gộp Bước 0 + Task trong cùng 1 phiên shell:** Đa số AI agent chạy mỗi lệnh trong một phiên shell mới; **bắt buộc** gộp phần khai báo ở Bước 0 cùng với lệnh của Task vào chung 1 lần thực thi để không mất biến `$SRC_*`, `$DST_*` và hàm `Copy-Rel`, `Sync-IconsIndex`, `Fake-Commit`.
+4. **Dùng script helper chung & chạy gộp trong 1 phiên shell:** Nạp `./scripts/sprint-helpers.ps1` (`. .\scripts\sprint-helpers.ps1`) cùng với các biến `$SRC_*`, `$DST_*` và lệnh của Task trong cùng 1 lần chạy PowerShell để không mất biến/hàm.
 5. **Cơ chế icon tăng dần (`Sync-IconsIndex`):** Mỗi feature chỉ copy đúng các file icon dùng cho tính năng đó, sau đó gọi `Sync-IconsIndex` để `src/components/icons/index.ts` chỉ export những icon đang có, đảm bảo không lỗi `Module not found`.
-6. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `Copy-Rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
+6. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `Copy-Rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`.
 
 ---
 
-## Bước 0: Cấu hình đường dẫn, Git identity & hàm hỗ trợ (chạy 1 lần đầu mỗi phiên PowerShell)
+## Bước 0: Cấu hình đường dẫn, Git email & nạp script helper
 
-> Sửa lại đường dẫn `$SRC_*` và `$DST_*` cho đúng thư mục trên máy bạn, đồng thời điền đúng `user.name` và `user.email` GitHub của bạn.
+> Điền đúng đường dẫn thư mục do người dùng cung cấp khi hỏi ở bước 1. Các hàm `Set-GitEmailIfNeeded`, `Copy-Rel`, `Sync-IconsIndex`, `Fake-Commit` nằm sẵn trong [scripts/sprint-helpers.ps1](./scripts/sprint-helpers.ps1).
 
 ```powershell
-# 1. Đường dẫn repo nguồn
+# 1. Nạp các hàm hỗ trợ dùng chung (chạy từ thư mục sprint-guides)
+. .\scripts\sprint-helpers.ps1
+
+# 2. Đường dẫn repo nguồn (cập nhật theo câu trả lời của người dùng)
 $SRC_USER   = "D:\2026.1\CNPM\sources\nmcnpm"
 $SRC_ADMIN  = "D:\2026.1\CNPM\sources\nmcnpm-admin"
 $SRC_DRIVER = "D:\2026.1\CNPM\sources\locdz"
 
-# 2. Đường dẫn repo đích
+# 3. Đường dẫn repo đích (cập nhật theo câu trả lời của người dùng)
 $DST_USER   = "D:\2026.1\CNPM\ViVuViet-frontend-user"
 $DST_ADMIN  = "D:\2026.1\CNPM\ViVuViet-frontend-admin"
 $DST_DRIVER = "D:\2026.1\CNPM\ViVuViet-frontend-driver"
 
-# 3. Cấu hình Git tác giả
-$GIT_NAME  = "Nguyen Thai Binh"
+# 4. Đảm bảo user.email khớp tài khoản GitHub (giữ nguyên user.name nếu máy đã có)
 $GIT_EMAIL = "nguyenthaibinh.tink32chl@gmail.com"
-
-foreach ($repo in @($DST_USER, $DST_ADMIN, $DST_DRIVER)) {
-    git -C $repo config user.name $GIT_NAME
-    git -C $repo config user.email $GIT_EMAIL
-}
-
-# 4. Hàm copy file/thư mục giữ nguyên cấu trúc tương đối
-function Copy-Rel {
-    param(
-        [string]$SrcRoot,
-        [string]$DstRoot,
-        [string[]]$Paths
-    )
-    foreach ($p in $Paths) {
-        $src = Join-Path $SrcRoot ($p -replace '/', '\')
-        $dst = Join-Path $DstRoot ($p -replace '/', '\')
-        if (-not (Test-Path $src)) {
-            throw "Khong tim thay: $src"
-        }
-        if (Test-Path $src -PathType Container) {
-            New-Item -ItemType Directory -Path $dst -Force | Out-Null
-            Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
-        } else {
-            $parent = Split-Path $dst -Parent
-            New-Item -ItemType Directory -Path $parent -Force | Out-Null
-            Copy-Item -Path $src -Destination $dst -Force
-        }
-    }
-}
-
-# 5. Hàm đồng bộ src/components/icons/index.ts chỉ export các icon đã có ở đích
-function Sync-IconsIndex {
-    param(
-        [string]$SrcRoot,
-        [string]$DstRoot
-    )
-    $srcIndex = Join-Path $SrcRoot "src\components\icons\index.ts"
-    $dstDir   = Join-Path $DstRoot "src\components\icons"
-    $dstIndex = Join-Path $dstDir "index.ts"
-    if (-not (Test-Path $srcIndex)) {
-        throw "Khong tim thay: $srcIndex"
-    }
-    New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
-    $kept = @()
-    foreach ($line in Get-Content $srcIndex) {
-        if ($line -match '\./([A-Za-z0-9_-]+)') {
-            $mod = $Matches[1]
-            if ((Test-Path (Join-Path $dstDir "$mod.tsx")) -or (Test-Path (Join-Path $dstDir "$mod.ts"))) {
-                $kept += $line
-            }
-        }
-    }
-    [System.IO.File]::WriteAllLines($dstIndex, $kept, (New-Object System.Text.UTF8Encoding $false))
-}
-
-# 6. Hàm commit với thời gian giả lập (+07:00), tự bỏ qua nếu không có thay đổi
-function Fake-Commit {
-    param(
-        [string]$RepoPath,
-        [string]$IsoDate,
-        [string]$Message
-    )
-    git -C $RepoPath add -A
-    git -C $RepoPath reset -q HEAD -- AGENTS.md opencode.json 2>$null
-    $changes = git -C $RepoPath status --porcelain
-    if (-not $changes) {
-        Write-Host "Bo qua (khong co thay doi): $Message"
-        return
-    }
-    $env:GIT_AUTHOR_DATE = $IsoDate
-    $env:GIT_COMMITTER_DATE = $IsoDate
-    try {
-        git -C $RepoPath commit -m $Message
-    } finally {
-        Remove-Item Env:GIT_AUTHOR_DATE -ErrorAction SilentlyContinue
-        Remove-Item Env:GIT_COMMITTER_DATE -ErrorAction SilentlyContinue
-    }
-}
+Set-GitEmailIfNeeded -Repos @($DST_USER, $DST_ADMIN, $DST_DRIVER) -Email $GIT_EMAIL -FallbackName "Nguyen Thai Binh"
 ```
 
 ---

@@ -8,102 +8,38 @@
 - **Sprint 2 — Task 2.9 (13/11 – 14/11/2026):** Xây dựng giao diện danh sách chuyến được phân công, chi tiết chuyến & hồ sơ tài xế cho `ViVuViet-frontend-driver`.
 
 ## Hướng dẫn dành cho AI Agent (đọc kỹ trước khi chạy trên macOS)
-1. **Tìm hoặc clone repo:** Kiểm tra trên máy Mac xem đã có repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) chưa. Nếu chưa có, tự `git clone`:
-   - Nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
-   - Đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
-2. **Kiểm tra Git identity:** `GIT_NAME` là `Ha Duc Duy` và `GIT_EMAIL` đã được đặt là `duy.hd2416182@sis.hust.edu.vn`. Xác nhận lại với người dùng nếu cần dùng email GitHub khác.
+1. **Hỏi vị trí lưu repo trước khi chạy:** Trước khi thực thi Bước 0, hãy **hỏi người dùng** (qua form/câu hỏi tương tác) xem trên máy Mac đang lưu 3 repo nguồn (`nmcnpm`, `nmcnpm-admin`, `locdz`) và 3 repo đích (`ViVuViet-frontend-user`, `ViVuViet-frontend-admin`, `ViVuViet-frontend-driver`) ở thư mục nào (hoặc muốn clone vào đâu nếu chưa có). Không tự ý clone vào đường dẫn mặc định nếu chưa hỏi.
+   - URL nguồn: `https://github.com/helloworld-cmyk/nmcnpm.git`, `https://github.com/helloworld-cmyk/nmcnpm-admin.git`, `https://github.com/Another001/locdz.git`
+   - URL đích: `https://github.com/ViVuViet/ViVuViet-frontend-user.git`, `https://github.com/ViVuViet/ViVuViet-frontend-admin.git`, `https://github.com/ViVuViet/ViVuViet-frontend-driver.git`
+2. **Kiểm tra Git email:** Chỉ cần đảm bảo `user.email` là `duy.hd2416182@sis.hust.edu.vn` (để GitHub gắn đúng commit vào tài khoản). Không cần ghi đè `user.name` nếu máy đã cấu hình sẵn.
 3. **Kiểm tra điều kiện tiên quyết từng task:** Kiểm tra nhánh của thành viên trước đã được merge vào `origin/main` chưa trước khi `git pull origin main` và tạo nhánh mới. Nếu chưa merge, dừng lại và báo người dùng.
-4. **Chạy gộp Bước 0 + Task trong cùng 1 phiên shell:** Đa số AI agent chạy mỗi lệnh trong một phiên shell mới; **bắt buộc** gộp phần khai báo ở Bước 0 cùng với lệnh của Task vào chung 1 lần thực thi để không mất biến `$SRC_*`, `$DST_*` và hàm `copy_rel`, `sync_icons_index`, `fake_commit`.
+4. **Dùng script `.sh` chung & chạy gộp trong 1 phiên shell:** Nạp `./scripts/sprint-helpers.sh` (`source ./scripts/sprint-helpers.sh`) cùng với các biến `$SRC_*`, `$DST_*` và lệnh của Task trong cùng 1 lần chạy bash/zsh để không mất biến/hàm.
 5. **Cơ chế icon tăng dần (`sync_icons_index`):** Mỗi feature chỉ copy đúng các file icon dùng cho tính năng đó, sau đó gọi `sync_icons_index` để file `src/components/icons/index.ts` chỉ export những icon đang có, đảm bảo không lỗi `Module not found`.
-6. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `copy_rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`. Sau khi `git push`, báo lại tên nhánh để người dùng tạo Pull Request trên GitHub.
+6. **Quy tắc an toàn & Verify:** Không chỉnh sửa code gốc, không copy thư mục `.agents/`. Nếu `copy_rel` báo thiếu file -> dừng ngay trước khi push. Trước khi push, chạy `git -C <repo> log -n 6 --format="%h | %ai | %an <%ae> | %s"` và `git -C <repo> status` để xác nhận đúng timestamp `+07:00`.
 
 ---
 
-## Bước 0: Cấu hình đường dẫn, Git identity & hàm hỗ trợ (chạy 1 lần đầu mỗi phiên Terminal)
+## Bước 0: Cấu hình đường dẫn, Git email & nạp script `.sh`
 
-> Sửa lại đường dẫn `SRC_*` và `DST_*` cho đúng thư mục trên máy Mac của bạn, đồng thời điền đúng `user.name` và `user.email` GitHub của bạn.
+> Điền đúng đường dẫn thư mục do người dùng cung cấp khi hỏi ở bước 1. Các hàm `set_git_email_if_needed`, `copy_rel`, `sync_icons_index`, `fake_commit` nằm sẵn trong [scripts/sprint-helpers.sh](./scripts/sprint-helpers.sh).
 
 ```bash
-# 1. Đường dẫn repo nguồn
+# 1. Nạp các hàm hỗ trợ dùng chung (chạy từ thư mục sprint-guides)
+source ./scripts/sprint-helpers.sh
+
+# 2. Đường dẫn repo nguồn (cập nhật theo câu trả lời của người dùng)
 SRC_USER="$HOME/Documents/CNPM/sources/nmcnpm"
 SRC_ADMIN="$HOME/Documents/CNPM/sources/nmcnpm-admin"
 SRC_DRIVER="$HOME/Documents/CNPM/sources/locdz"
 
-# 2. Đường dẫn repo đích
+# 3. Đường dẫn repo đích (cập nhật theo câu trả lời của người dùng)
 DST_USER="$HOME/Documents/CNPM/ViVuViet-frontend-user"
 DST_ADMIN="$HOME/Documents/CNPM/ViVuViet-frontend-admin"
 DST_DRIVER="$HOME/Documents/CNPM/ViVuViet-frontend-driver"
 
-# 3. Cấu hình Git tác giả
-GIT_NAME="Ha Duc Duy"
+# 4. Đảm bảo user.email khớp tài khoản GitHub (giữ nguyên user.name nếu máy đã có)
 GIT_EMAIL="duy.hd2416182@sis.hust.edu.vn"
-
-for repo in "$DST_USER" "$DST_ADMIN" "$DST_DRIVER"; do
-  git -C "$repo" config user.name "$GIT_NAME"
-  git -C "$repo" config user.email "$GIT_EMAIL"
-done
-
-# 4. Hàm copy file/thư mục giữ nguyên cấu trúc tương đối
-copy_rel() {
-  local src_root="$1"
-  local dst_root="$2"
-  shift 2
-  for p in "$@"; do
-    local src="$src_root/$p"
-    local dst="$dst_root/$p"
-    if [ ! -e "$src" ]; then
-      echo "Khong tim thay: $src" >&2
-      return 1
-    fi
-    if [ -d "$src" ]; then
-      mkdir -p "$dst"
-      cp -R "$src"/. "$dst"/
-    else
-      mkdir -p "$(dirname "$dst")"
-      cp "$src" "$dst"
-    fi
-  done
-}
-
-# 5. Hàm đồng bộ src/components/icons/index.ts chỉ export các icon đã có ở đích
-sync_icons_index() {
-  local src_root="$1"
-  local dst_root="$2"
-  local src_index="$src_root/src/components/icons/index.ts"
-  local dst_dir="$dst_root/src/components/icons"
-  local dst_index="$dst_dir/index.ts"
-  if [ ! -f "$src_index" ]; then
-    echo "Khong tim thay: $src_index" >&2
-    return 1
-  fi
-  mkdir -p "$dst_dir"
-  : > "$dst_index"
-  while IFS= read -r line; do
-    if [[ "$line" =~ \./([A-Za-z0-9_-]+) ]]; then
-      local mod="${BASH_REMATCH[1]}"
-      if [ -f "$dst_dir/$mod.tsx" ] || [ -f "$dst_dir/$mod.ts" ]; then
-        echo "$line" >> "$dst_index"
-      fi
-    fi
-  done < "$src_index"
-}
-
-# 6. Hàm commit với thời gian giả lập (+07:00), tự bỏ qua nếu không có thay đổi
-fake_commit() {
-  local repo_path="$1"
-  local iso_date="$2"
-  local message="$3"
-  git -C "$repo_path" add -A
-  git -C "$repo_path" reset -q HEAD -- AGENTS.md opencode.json 2>/dev/null || true
-  if [ -z "$(git -C "$repo_path" status --porcelain)" ]; then
-    echo "Bo qua (khong co thay doi): $message"
-    return 0
-  fi
-  export GIT_AUTHOR_DATE="$iso_date"
-  export GIT_COMMITTER_DATE="$iso_date"
-  git -C "$repo_path" commit -m "$message"
-  unset GIT_AUTHOR_DATE GIT_COMMITTER_DATE
-}
+set_git_email_if_needed "$GIT_EMAIL" "Ha Duc Duy" "$DST_USER" "$DST_ADMIN" "$DST_DRIVER"
 ```
 
 ---
