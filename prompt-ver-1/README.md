@@ -8,7 +8,7 @@ Tài liệu này giúp cả team dùng AI Coding Agent (OpenCode, Claude Code, C
 
 Mỗi khi giao 1 task cho AI Agent, hãy để Agent chạy theo đúng vòng lặp 5 bước:
 
-1. **Đọc Context & Scope Lock:** Đọc [README.md](./README.md) và đúng file `.md` của bạn (`do-le-hoang.md`, `ha-duc-duy.md`, `lai-quoc-minh.md`, `nguyen-thai-binh.md`). Không đụng vào task của người khác.
+1. **Đọc Context & Scope Lock:** Đọc [README.md](../README.md) và đúng file `.md` của bạn (`do-le-hoang.md`, `ha-duc-duy.md`, `lai-quoc-minh.md`, `nguyen-thai-binh.md`). Không đụng vào task của người khác.
 2. **Pre-flight Check (Kiểm tra điều kiện tiên quyết):**
    - Kiểm tra repo nguồn (`sources/...`) và repo đích (`ViVuViet-frontend-...`) đã tồn tại chưa; nếu chưa thì clone đúng đường dẫn.
    - Kiểm tra Git identity (`user.name`, `user.email`) — **tuyệt đối không commit nếu email còn là `@example.com`**.
@@ -112,7 +112,7 @@ Hãy thực hiện các bước sau (KHÔNG force push, KHÔNG reset cứng khi 
 
 Trước khi bấm **Merge Pull Request** trên GitHub, hãy kiểm tra nhanh 6 điểm sau:
 
-- [ ] **Đúng thứ tự merge:** Không bao giờ tạo nhánh task sau khi nhánh tiên quyết chưa merge vào `main` (xem mục *Thứ tự merge vào `main` khuyến nghị* trong [README.md](./README.md)).
+- [ ] **Đúng thứ tự merge:** Không bao giờ tạo nhánh task sau khi nhánh tiên quyết chưa merge vào `main` (xem mục *Thứ tự merge vào `main` khuyến nghị* trong [README.md](../README.md)).
 - [ ] **Đúng tác giả Git:** `git log` không còn email `@example.com`.
 - [ ] **Đúng múi giờ `+07:00`:** Ngày giờ commit khớp với lịch Sprint trong file hướng dẫn.
 - [ ] **Không copy `.agents/`:** Repo đích không chứa thư mục `.agents/` từ repo nguồn.

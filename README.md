@@ -1,6 +1,6 @@
 # Hướng dẫn đẩy code & fake commit Sprint 1 – 2 (Vi Vu Việt - Frontend)
 
-> **Hướng dẫn dùng AI Coding Agent (Prompt chuẩn copy-paste):** Xem [PROMPT_GUIDE.md](./PROMPT_GUIDE.md)
+> **Hướng dẫn dùng AI Coding Agent (Prompt chuẩn copy-paste):** Xem [prompt-ver-1/README.md](./prompt-ver-1/README.md)
 
 Thư mục này chứa hướng dẫn chi tiết từng câu lệnh cho **4 thành viên phụ trách Frontend/Setup/Integration** trong Sprint 1 (`27/10/2026 – 09/11/2026`) và Sprint 2 (`10/11/2026 – 23/11/2026`).
 
